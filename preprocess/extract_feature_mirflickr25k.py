@@ -10,7 +10,7 @@ from PIL import Image
 
 
 if __name__ == "__main__":
-    dataset_path = 'E:\CrossModal\data\mirflickr'
+    dataset_path = '/root/CrossModal/data/mirflickr'
 	# 读取数据
     images = h5py.File(os.path.join(dataset_path, 'mirflickr25k-iall.mat'), 'r')["IAll"][()] # NCHW (or NCWH?)
 

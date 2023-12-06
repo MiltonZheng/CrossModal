@@ -1,3 +1,4 @@
+import os
 import paddle
 import numpy as np
 import scipy.io as scio
@@ -8,9 +9,10 @@ class DatasetStraight(Dataset):
     def __init__(self, config, data_type='train'):
         assert (data_type in ['train', 'test', 'database']), "data_type should be 'train' or 'test' or 'database'"
         # open the train.npy, test.npy and database.npy for loader
-        self.file_img = open(config.data_path + config.data_name + f'\{data_type}_img.npy', 'rb')
-        self.file_text = open(config.data_path + config.data_name + f'\{data_type}_text.npy', 'rb')
-        self.file_label = open(config.data_path + config.data_name + f'\{data_type}_label.npy', 'rb')
+        dataset_path = os.path.join(config.data_path, config.data_name)
+        self.file_img = open(os.path.join(dataset_path, f'{data_type}_img.npy'), 'rb')
+        self.file_text = open(os.path.join(dataset_path, f'{data_type}_text.npy'), 'rb')
+        self.file_label = open(os.path.join(dataset_path, f'{data_type}_label.npy'), 'rb')
         self.images = np.load(self.file_img)
         self.texts = np.load(self.file_text)
         self.labels = np.load(self.file_label)

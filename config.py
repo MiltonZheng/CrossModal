@@ -7,7 +7,7 @@ parser.add_argument('--feature_dim', type=int, default=4096, help='dim of vgg ou
 
 # dataset config
 parser.add_argument('--data_name', type=str, default='mirflickr', help='WIKI or mirflickr or nuswide')
-parser.add_argument('--data_path', type=str, default='E:\\CrossModal\\data\\', help='dataset path...')
+parser.add_argument('--data_path', type=str, default='/root/CrossModal/data', help='dataset path...')
 parser.add_argument('--txt_len', type=int, default=1386, help='the length of text feature')
 
 parser.add_argument('--Tanh', action='store_true', help='use tanh to binarize the hash code')
