@@ -6,6 +6,7 @@ from tqdm import tqdm
 
 import config
 import utils
+from metric import codeGen
 from load_data import getLoader
 from models.model import ImgNet, TxtNet, contrastive_loss
 
@@ -28,6 +29,12 @@ state = {
 }
 logger = None
 
+
+def test_step(config, codeNet_I, codeNet_T, test_loader, database_loader):
+    codeNet_I.eval()
+    codeNet_T.eval()
+    re_BI, re_BT, re_L, qu_BI, qu_BT, qu_L = codeGen(codeNet_I, codeNet_T, test_loader, database_loader)
+    pass
 
 
 def train_step(config, codeNet_I, codeNet_T, opt_I, opt_T, train_loader):
@@ -87,8 +94,10 @@ def train(config):
     
     for epoch in range(config.epochs):
         state['epoch'] = epoch
-        train_step(config, codeNet_I, codeNet_T, opt_I, opt_T, train_loader)
-        logger.info(f"epoch: {epoch}")
+        loss = train_step(config, codeNet_I, codeNet_T, opt_I, opt_T, train_loader)
+        logger.info(f"epoch: {epoch}, loss: {loss}")
+        if (epoch + 1) % config.eval_epochs == 0:
+            pass
     pass
 
 

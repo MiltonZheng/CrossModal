@@ -16,7 +16,7 @@ parser.add_argument('--lr_I', type=float, default=0.0003, help='learning rate fo
 parser.add_argument('--lr_T', type=float, default=0.0003, help='learning rate for text net')
 parser.add_argument('--epochs', type=int, default=100, help='training epoch')
 parser.add_argument('--batch_size', type=int, default=256, help='the batch size for training')  # batch_size most be even in this project
-parser.add_argument('--eval_epochs', type=int, default=1)
+parser.add_argument('--eval_epochs', type=int, default=5)
 parser.add_argument('--eval', action='store_true')
 parser.add_argument('--workers', type=int, default=0, help='number of data loader workers.')
 # Hashing
