@@ -3,6 +3,13 @@ import paddle.nn.functional as F
 from tqdm import tqdm
 import numpy as np
 
+
+def calculate_hamming_dist(outputs1, outputs2):
+    ip = paddle.mm(outputs1, outputs2.t())
+    D = outputs1.shape[-1]
+    ham_dist = 0.5 * (D - ip)
+    return ham_dist
+
 def cal_knn(config, code_I, code_T, labels=None, k=None):
     # 归一化
     code_I = F.normalize(code_I)

@@ -7,6 +7,7 @@ import paddle.nn.functional as F
 
 from sklearn.cluster import KMeans
 from sklearn.mixture import GaussianMixture
+from utils import calculate_hamming_dist
 
 
 """
@@ -81,22 +82,3 @@ def contrastive_loss(laplacian, laplacian_I, laplacian_T, img_hashcode, txt_hash
             - paddle.log(paddle.sum(intra_I_T_sum) / paddle.sum(inter_I_T_sum))
         
     return loss
-
-
-def cal_similarity_high_feature(config, feature_img, feature_text, label=None, alpha=0.5):
-    # 计算余弦相似度
-    feature_img = F.normalize(feature_img)
-    feature_text = F.normalize(feature_text)
-    cos_distance_img = paddle.matmul(feature_img, feature_img.t())
-    cos_distance_text = paddle.matmul(feature_text, feature_text.t())
-    cos_distance_img = cos_distance_img * 2 - 1
-    cos_distance_text = cos_distance_text * 2 - 1
-    joint = cos_distance_img * alpha + (1 - alpha) * cos_distance_text
-
-    return joint, cos_distance_img, cos_distance_text
-
-def calculate_hamming_dist(outputs1, outputs2):
-    ip = paddle.mm(outputs1, outputs2.t())
-    D = outputs1.shape[1]
-    ham_dist = 0.5 * (D - ip)
-    return ham_dist

@@ -2,14 +2,16 @@ import paddle
 import paddle.nn.functional as F
 import numpy as np
 from tqdm import tqdm
+from utils import calculate_hamming_dist
 
 def codeGen(codeNet_I, codeNet_T, test_loader, database_loader):
     re_BI = []
     re_BT = []
     re_L = []
     database_loader = tqdm(database_loader, desc="database")
-    for idx, (data_I, data_T, data_L, _) in database_loader:
+    for idx, (data_I, data_T, data_L, _) in enumerate(database_loader):
         data_T = paddle.cast(data_T, "float32")
+        data_L = paddle.cast(data_L, "float32")
         with paddle.no_grad():
             hashcode_I, _ = codeNet_I(data_I)
             hashcode_T, _ = codeNet_T(data_T)
@@ -24,8 +26,9 @@ def codeGen(codeNet_I, codeNet_T, test_loader, database_loader):
     qu_L = []
     
     test_loader = tqdm(test_loader, desc="test")
-    for idx, (test_I, test_T, test_L,  _) in test_loader:
+    for idx, (test_I, test_T, test_L,  _) in enumerate(test_loader):
         test_T = paddle.cast(test_T, "float32")
+        test_L = paddle.cast(test_L, "float32")
         with paddle.no_grad():
             hashcode_I, _ = codeNet_I(test_I)
             hashcode_T, _ = codeNet_T(test_T)
@@ -34,25 +37,34 @@ def codeGen(codeNet_I, codeNet_T, test_loader, database_loader):
         qu_BI.extend(hashcode_I)
         qu_BT.extend(hashcode_T)
         qu_L.extend(test_L)
-        
+    
+    re_BI = paddle.to_tensor(re_BI)
+    re_BT = paddle.to_tensor(re_BT)
+    re_L = paddle.to_tensor(re_L)
+    qu_BI = paddle.to_tensor(qu_BI)
+    qu_BT = paddle.to_tensor(qu_BT)
+    qu_L = paddle.to_tensor(qu_L)
     return re_BI, re_BT, re_L, qu_BI, qu_BT, qu_L
 
-def cal_mAp(re_B, re_L, qu_B, qu_L):
-    query_num = len(qu_L)
-    retrieval_num = len(re_L)
-    mAp = 0.
+
+def cal_mAP(qu_B, qu_L, re_B, re_L, k):
+    query_num = qu_L.shape[0]
+    mAP, precision, recall = 0., 0., 0.
     for i in range(query_num):
-        query_label = qu_L[i]
-        query_code = qu_B[i]
-        gnd = (np.asarray(re_L) == query_label).astype("float32")
-        tsum = np.sum(gnd)
+        gnd = (paddle.mm(qu_L[i, :], re_L.t()) > 0).astype(paddle.float32)
+        hamm = calculate_hamming_dist(qu_B[i, :], re_B)
+        ind = paddle.argsort(hamm)
+        gnd = gnd[ind]
+        tgnd = gnd[:k]
+        tsum = paddle.sum(tgnd)
         if tsum == 0:
             continue
-        hamm = np.sum((np.asarray(re_B) != query_code).astype("float32"), axis=1)
-        ind = np.argsort(hamm)
-        gnd = gnd[ind]
-        count = np.linspace(1, tsum, tsum)
-        tindex = np.asarray(np.where(gnd == 1)) + 1.
-        mAp += np.mean(count / (tindex))
-    mAp /= query_num
-    return mAp
+        count = paddle.linspace(1, tsum, int(tsum))
+        tindex = paddle.to_tensor(paddle.where(gnd == 1)) + 1.
+        mAP += paddle.mean(count / (tindex))
+        precision += tsum / k
+        recall += tsum / paddle.sum(gnd)
+    mAP /= query_num
+    precision /= query_num
+    recall /= query_num
+    return mAP, precision, recall

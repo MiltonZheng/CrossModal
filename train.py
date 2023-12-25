@@ -6,21 +6,17 @@ from tqdm import tqdm
 
 import config
 import utils
-from metric import codeGen
+from metric import codeGen, cal_mAP
 from load_data import getLoader
 from models.model import ImgNet, TxtNet, contrastive_loss
 
 
 state = {
     'epoch' : 0,
-    
-    'best_MAP' : 0.0,
+    'best_mAP' : 0.0,
     'best_I2T' : 0.0,
     'best_T2I' : 0.0,
     'best_epoch' : 0,
-    'Database_hashpool_path' : None,
-    'Testbase_hashpool_path' : None,
-    'Trainbase_hashpool_path' : None,
     'final_result' : None,
     'filename_previous_best' : None,
     'iter' : 0,
@@ -34,7 +30,12 @@ def test_step(config, codeNet_I, codeNet_T, test_loader, database_loader):
     codeNet_I.eval()
     codeNet_T.eval()
     re_BI, re_BT, re_L, qu_BI, qu_BT, qu_L = codeGen(codeNet_I, codeNet_T, test_loader, database_loader)
-    pass
+    mAP_I2T, p_I2T, r_I2T = cal_mAP(qu_B=qu_BI, qu_L=qu_L, re_B=re_BT, re_L=re_L, k=config.knn_num)
+    mAP_T2I, p_T2I, r_T2I = cal_mAP(qu_B=qu_BT, qu_L=qu_L, re_B=re_BI, re_L=re_L, k=config.knn_num)
+    logger.info(f"mAP of image to text: {mAP_I2T}, mAP of text to image: {mAP_T2I}")
+    metrics = (mAP_I2T, mAP_T2I, p_I2T, p_T2I, r_I2T, r_T2I)
+    code_pool = (re_BI, re_BT, qu_BI, qu_BT)
+    return metrics, code_pool
 
 
 def train_step(config, codeNet_I, codeNet_T, opt_I, opt_T, train_loader):
@@ -97,8 +98,10 @@ def train(config):
         loss = train_step(config, codeNet_I, codeNet_T, opt_I, opt_T, train_loader)
         logger.info(f"epoch: {epoch}, loss: {loss}")
         if (epoch + 1) % config.eval_epochs == 0:
-            pass
-    pass
+            mertics, code_pool = test_step(config, codeNet_I, codeNet_T, test_loader, database_loader)
+            mAP_I2T, mAP_T2I, p_I2T, p_T2I, r_I2T, r_T2I = mertics
+            if mAP_I2T + mAP_T2I > state["best_mAP"]:
+                logger.info("better mAP found, saving model...")
 
 
 if __name__ == "__main__":
