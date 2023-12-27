@@ -47,6 +47,7 @@ def cal_knn(config, code_I, code_T, labels=None, k=None):
     # sim_T[paddle.reshape(paddle.arange(total), [-1,1]), id_T[:, :bottom]] = 0.
     # sim_T[paddle.arange(total), paddle.reshape(id_T[:, -1:],[-1])] = 0.
     
+    # 合并相似度，只要有一个相似就算相似
     sim = sim_I + sim_T
     sim[sim > 0.] = 1.
     
@@ -59,8 +60,10 @@ def cal_knn(config, code_I, code_T, labels=None, k=None):
 
 def generate_laplacian_matrix(sim, eta=1.0):
     D_ = F.diag_embed(1. / paddle.sqrt(paddle.sum(sim > 0, axis=1).reshape([1, -1]).astype("float32"))).reshape([sim.shape[0], -1])
+    # P的直观含义：将sim上所有相似度为1的位置sim[i,j]变为1/sqrt(d_i*d_j)
     P = D_ @ sim @ D_
-    P_2 = P @ P.t()
+    # P_2 = P @ P.t()
     I = paddle.eye(P.shape[0])
+    # L对角线上均为1，而topk对应的位置为-1/sqrt(d_i*d_j)，其余为0
     L = I - P
     return L

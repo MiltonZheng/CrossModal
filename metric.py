@@ -4,12 +4,12 @@ import numpy as np
 from tqdm import tqdm
 from utils import calculate_hamming_dist
 
-def codeGen(codeNet_I, codeNet_T, test_loader, database_loader):
+def codeGen(codeNet_I, codeNet_T, query_loader, retrieval_loader):
     re_BI = []
     re_BT = []
     re_L = []
-    database_loader = tqdm(database_loader, desc="database")
-    for idx, (data_I, data_T, data_L, _) in enumerate(database_loader):
+    retrieval_loader = tqdm(retrieval_loader, desc="retrieval")
+    for idx, (data_I, data_T, data_L, _) in enumerate(retrieval_loader):
         data_T = paddle.cast(data_T, "float32")
         data_L = paddle.cast(data_L, "float32")
         with paddle.no_grad():
@@ -25,8 +25,8 @@ def codeGen(codeNet_I, codeNet_T, test_loader, database_loader):
     qu_BT = []
     qu_L = []
     
-    test_loader = tqdm(test_loader, desc="test")
-    for idx, (test_I, test_T, test_L,  _) in enumerate(test_loader):
+    query_loader = tqdm(query_loader, desc="query")
+    for idx, (test_I, test_T, test_L,  _) in enumerate(query_loader):
         test_T = paddle.cast(test_T, "float32")
         test_L = paddle.cast(test_L, "float32")
         with paddle.no_grad():
@@ -60,7 +60,7 @@ def cal_mAP(qu_B, qu_L, re_B, re_L, k):
         if tsum == 0:
             continue
         count = paddle.linspace(1, tsum, int(tsum))
-        tindex = paddle.to_tensor(paddle.where(gnd == 1)) + 1.
+        tindex = paddle.to_tensor(paddle.where(tgnd == 1)) + 1.
         mAP += paddle.mean(count / (tindex))
         precision += tsum / k
         recall += tsum / paddle.sum(gnd)

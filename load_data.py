@@ -1,13 +1,12 @@
 import os
 import paddle
 import numpy as np
-import scipy.io as scio
 from paddle.io import Dataset, DataLoader
 
 
 class DatasetStraight(Dataset):
     def __init__(self, config, data_type='train'):
-        assert (data_type in ['train', 'test', 'database']), "data_type should be 'train' or 'test' or 'database'"
+        assert (data_type in ['train', 'query', 'retrieval']), "data_type should be 'train' or 'query' or 'retrieval'"
         # open the train.npy, test.npy and database.npy for loader
         dataset_path = os.path.join(config.data_path, config.data_name)
         self.file_img = open(os.path.join(dataset_path, f'{data_type}_img.npy'), 'rb')
@@ -30,23 +29,23 @@ class DatasetStraight(Dataset):
 
 def getLoader(config):
     train_dataset = DatasetStraight(config, data_type='train')
-    test_dataset = DatasetStraight(config, data_type='test')
-    database_dataset = DatasetStraight(config, data_type='database')
+    query_dataset = DatasetStraight(config, data_type='query')
+    retrieval_dataset = DatasetStraight(config, data_type='retrieval')
     train_loader = DataLoader(dataset=train_dataset,
                               batch_size=config.batch_size,
                               shuffle=False,
                               num_workers=config.workers,
                               drop_last=True)
 
-    test_loader = DataLoader(dataset=test_dataset,
+    query_loader = DataLoader(dataset=query_dataset,
                              batch_size=config.batch_size,
                              shuffle=False,
                              num_workers=config.workers)
 
-    database_loader = DataLoader(dataset=database_dataset,
+    retrieval_loader = DataLoader(dataset=retrieval_dataset,
                                  batch_size=config.batch_size,
                                  shuffle=False,
                                  num_workers=config.workers,
                                  drop_last=True)
     
-    return train_loader, test_loader, database_loader
+    return train_loader, query_loader, retrieval_loader

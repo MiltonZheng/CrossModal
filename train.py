@@ -5,7 +5,7 @@ import numpy as np
 from tqdm import tqdm
 
 import config
-import utils
+from utils import generate_laplacian_matrix, cal_knn
 from metric import codeGen, cal_mAP
 from load_data import getLoader
 from models.model import ImgNet, TxtNet, contrastive_loss
@@ -26,10 +26,10 @@ state = {
 logger = None
 
 
-def test_step(config, codeNet_I, codeNet_T, test_loader, database_loader):
+def test_step(config, codeNet_I, codeNet_T, query_loader, retrieval_loader):
     codeNet_I.eval()
     codeNet_T.eval()
-    re_BI, re_BT, re_L, qu_BI, qu_BT, qu_L = codeGen(codeNet_I, codeNet_T, test_loader, database_loader)
+    re_BI, re_BT, re_L, qu_BI, qu_BT, qu_L = codeGen(codeNet_I, codeNet_T, query_loader, retrieval_loader)
     mAP_I2T, p_I2T, r_I2T = cal_mAP(qu_B=qu_BI, qu_L=qu_L, re_B=re_BT, re_L=re_L, k=config.knn_num)
     mAP_T2I, p_T2I, r_T2I = cal_mAP(qu_B=qu_BT, qu_L=qu_L, re_B=re_BI, re_L=re_L, k=config.knn_num)
     logger.info(f"mAP of image to text: {mAP_I2T}, mAP of text to image: {mAP_T2I}")
@@ -56,10 +56,11 @@ def train_step(config, codeNet_I, codeNet_T, opt_I, opt_T, train_loader):
             else:
                 all_img_hashcode = paddle.concat((all_img_hashcode, img_hashcode), axis=0)
                 all_text_hashcode = paddle.concat((all_text_hashcode, img_hashcode), axis=0)
-        sim, sim_I, sim_T = utils.cal_knn(config, all_img_hashcode, all_text_hashcode)
-        laplacian = utils.generate_laplacian_matrix(sim)
-        laplacian_I = utils.generate_laplacian_matrix(sim_I)
-        laplacian_T = utils.generate_laplacian_matrix(sim_T)
+        # 计算相似矩阵
+        sim, sim_I, sim_T = cal_knn(config, all_img_hashcode, all_text_hashcode)
+        laplacian = generate_laplacian_matrix(sim)
+        laplacian_I = generate_laplacian_matrix(sim_I)
+        laplacian_T = generate_laplacian_matrix(sim_T)
         
         state['img_feature_last'] = all_img_hashcode
         state['text_feature_last'] = all_text_hashcode
@@ -87,7 +88,7 @@ def train_step(config, codeNet_I, codeNet_T, opt_I, opt_T, train_loader):
     return np.mean(loss_list)
 
 def train(config):
-    train_loader, test_loader, database_loader = getLoader(config)
+    train_loader, query_loader, retrieval_loader = getLoader(config)
     codeNet_I = ImgNet(config=config)
     codeNet_T = TxtNet(config=config)
     opt_I = paddle.optimizer.Adam(parameters=codeNet_I.parameters(), learning_rate=config.lr_I)
@@ -98,7 +99,7 @@ def train(config):
         loss = train_step(config, codeNet_I, codeNet_T, opt_I, opt_T, train_loader)
         logger.info(f"epoch: {epoch}, loss: {loss}")
         if (epoch + 1) % config.eval_epochs == 0:
-            mertics, code_pool = test_step(config, codeNet_I, codeNet_T, test_loader, database_loader)
+            mertics, code_pool = test_step(config, codeNet_I, codeNet_T, query_loader, retrieval_loader)
             mAP_I2T, mAP_T2I, p_I2T, p_T2I, r_I2T, r_T2I = mertics
             if mAP_I2T + mAP_T2I > state["best_mAP"]:
                 logger.info("better mAP found, saving model...")
@@ -110,7 +111,7 @@ if __name__ == "__main__":
                         format="%(asctime)s | %(levelname)s | %(message)s")
     configs = config.parser.parse_args()
     for k, v in vars(configs).items():
-        logging.info(f"{k} = {v}")
+        logger.info(f"{k} = {v}")
     
     logger.info("Start training...")
     train(configs)
