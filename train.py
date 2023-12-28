@@ -32,7 +32,7 @@ def test_step(config, codeNet_I, codeNet_T, query_loader, retrieval_loader):
     re_BI, re_BT, re_L, qu_BI, qu_BT, qu_L = codeGen(codeNet_I, codeNet_T, query_loader, retrieval_loader)
     mAP_I2T, p_I2T, r_I2T = cal_mAP(qu_B=qu_BI, qu_L=qu_L, re_B=re_BT, re_L=re_L, k=config.knn_num)
     mAP_T2I, p_T2I, r_T2I = cal_mAP(qu_B=qu_BT, qu_L=qu_L, re_B=re_BI, re_L=re_L, k=config.knn_num)
-    logger.info(f"mAP of image to text: {mAP_I2T}, mAP of text to image: {mAP_T2I}")
+    logger.info(f"mAP of image to text: {mAP_I2T.item()}, mAP of text to image: {mAP_T2I.item()}")
     metrics = (mAP_I2T, mAP_T2I, p_I2T, p_T2I, r_I2T, r_T2I)
     code_pool = (re_BI, re_BT, qu_BI, qu_BT)
     return metrics, code_pool
