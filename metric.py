@@ -1,7 +1,4 @@
 import paddle
-import paddle.nn.functional as F
-import numpy as np
-from tqdm import tqdm
 from utils import calculate_hamming_dist
 
 def codeGen(codeNet_I, codeNet_T, query_loader, retrieval_loader):

@@ -12,8 +12,8 @@ parser.add_argument('--txt_len', type=int, default=1386, help='the length of tex
 
 parser.add_argument('--Tanh', action='store_true', help='use tanh to binarize the hash code')
 
-parser.add_argument('--lr_I', type=float, default=0.0003, help='learning rate for image net')
-parser.add_argument('--lr_T', type=float, default=0.0003, help='learning rate for text net')
+parser.add_argument('--lr_I', type=float, default=0.0001, help='learning rate for image net')
+parser.add_argument('--lr_T', type=float, default=0.0001, help='learning rate for text net')
 parser.add_argument('--epochs', type=int, default=100, help='training epoch')
 parser.add_argument('--batch_size', type=int, default=256, help='the batch size for training')  # batch_size most be even in this project
 parser.add_argument('--eval_epochs', type=int, default=1)
